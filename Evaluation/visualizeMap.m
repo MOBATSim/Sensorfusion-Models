@@ -24,20 +24,20 @@ for i=numMethods
     thisResult=result{i,1};
     switch i
         case 1
-            assignmentMethod="GNN";
-            filterType="cvKF";
+            assignmentMethod='GNN';
+            filterType='cvKF';
             thisColor='b';
         case 2
-            assignmentMethod="GNN";
-            filterType="IMM";
+            assignmentMethod='GNN';
+            filterType='IMM';
             thisColor='k';
         case 3
-            assignmentMethod="JPDA";
-            filterType="cvKF";
+            assignmentMethod='JPDA';
+            filterType='cvKF';
             thisColor='y';
         case 4
-            assignmentMethod="JPDA";
-            filterType="IMM";
+            assignmentMethod='JPDA';
+            filterType='IMM';
             thisColor='#D95319';
     end
     
@@ -54,7 +54,7 @@ for i=numMethods
     xlabel("-1*Y[m]")
     ylabel("X[m]")
     
-    title([assignmentMethod filterType])
+    title([assignmentMethod ' - ' filterType])
     
     n=n+1;
 end

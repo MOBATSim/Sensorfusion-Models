@@ -189,6 +189,7 @@ for numActor=2:numActors+1
                 thisTimes=thisResult.Time(1:sensorFrequency/0.01:end);
                 thisDifference=distEgo2ActorEdge-dist2EgoTrack;
                 thisPlotDiff=thisDifference(1:sensorFrequency/0.01:end);
+                thisDeath=min(thisDeath,numel(thisPlotDiff));
                 allDifferences.Range{numActor,i,numTrack}=thisPlotDiff(thisBirth:thisDeath);
                 plot(thisTimes(thisBirth:thisDeath),thisPlotDiff(thisBirth:thisDeath),'Color',thisColor)
                 
@@ -206,12 +207,15 @@ for numActor=2:numActors+1
                 allDifferences.RangeAngles{numActor,i,numTrack}=thisAnglePlotDiff(thisBirth:thisDeath);
                 plot(thisTimes(thisBirth:thisDeath),thisAnglePlotDiff(thisBirth:thisDeath),'Color',thisColor)
                 
+                allDifferences.BirthDeath{numActor,i,numTrack}=[thisBirth,thisDeath];
+                
                 %% plotting the velocity of the track over time
                 subplot(2,2,3)
                 thisTimes=thisResult.Time;
                 thisVel=thisResult{:,(numActors+numTrack)*4+3};
                 allDifferences.Velocity{numActor,i,numTrack}=thisVel(1+int64((thisBirth-1)*sensorFrequency/0.01):1+int64((thisDeath-1)*sensorFrequency/0.01))...
                     -thisActorVel(1+int64((thisBirth-1)*sensorFrequency/0.01):1+int64((thisDeath-1)*sensorFrequency/0.01));
+                allDifferences.Velocity{numActor,i,numTrack}=allDifferences.Velocity{numActor,i,numTrack}(1:sensorFrequency/0.01:end,1);
                 plot(thisTimes(1+int64((thisBirth-1)*sensorFrequency/0.01):1+int64((thisDeath-1)*sensorFrequency/0.01)),...
                     thisVel(1+int64((thisBirth-1)*sensorFrequency/0.01):1+int64((thisDeath-1)*sensorFrequency/0.01)),'Color',thisColor)
                 
@@ -222,6 +226,7 @@ for numActor=2:numActors+1
                     -thisActorAngles(1+int64((thisBirth-1)*sensorFrequency/0.01):1+int64((thisDeath-1)*sensorFrequency/0.01));
                 thisAngles=thisAngles-2*pi*round(mean(allDifferences.VelocityAngles{numActor,i,numTrack})/2/pi);
                 allDifferences.VelocityAngles{numActor,i,numTrack}=allDifferences.VelocityAngles{numActor,i,numTrack}-2*pi*round(mean(allDifferences.VelocityAngles{numActor,i,numTrack})/2/pi);
+                allDifferences.VelocityAngles{numActor,i,numTrack}=allDifferences.VelocityAngles{numActor,i,numTrack}(1:sensorFrequency/0.01:end,1);
                 
                 plot(thisTimes(1+int64((thisBirth-1)*sensorFrequency/0.01):1+int64((thisDeath-1)*sensorFrequency/0.01)),...
                     thisAngles(1+int64((thisBirth-1)*sensorFrequency/0.01):1+int64((thisDeath-1)*sensorFrequency/0.01)),'Color',thisColor)

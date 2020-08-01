@@ -15,7 +15,8 @@ realData(size(scenario.Actors,2)).yaw=[];
 realData(size(scenario.Actors,2)).velocity=[];
 
 %% new simulation
-while scenario.SimulationTime-endTime<=0.001
+isRunning=1;
+while isRunning
     %% Storing all important variables
     for i=1:size(scenario.Actors,2)
         realData(i).position=[realData(i).position; scenario.Actors(1,i).Position];
@@ -24,7 +25,7 @@ while scenario.SimulationTime-endTime<=0.001
         realData(i).time=[realData(i).time; scenario.SimulationTime];
     end
     %% Then advancing to the next time step
-    advance(scenario);
+    isRunning=advance(scenario);
 end
 restart(scenario)
         

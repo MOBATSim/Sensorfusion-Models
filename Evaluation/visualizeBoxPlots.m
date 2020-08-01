@@ -1,4 +1,4 @@
-function [allErrors,allMeans,allStd]=visualizeBoxPlots(allDifferences,numActorIn)
+function [allErrors,allMeans,allStd]=visualizeBoxPlots(allDifferences,numActorIn,indexFrame)
 if numActorIn>1 && numActorIn <= size(allDifferences.Range,1)
     numActor=numActorIn;
 else
@@ -23,13 +23,37 @@ for method=1:4
                 thisVar="VelocityAngles";
         end
         thisDifference=allDifferences.(thisVar)(numActor,method,:);
-        thisErrors=cell2mat(reshape(thisDifference,size(thisDifference,3),1,1));
+        theseDifferences=[];
+%         thisErrors=cell2mat(reshape(thisDifference,size(thisDifference,3),1,1));
+%         allErrors(type,method)=sqrt(mean(thisErrors.^2));
+%         statisticAnalysis(type,method)=datastats(thisErrors);
+        for numTrack=1:size(thisDifference,3)
+            tracksDifference=thisDifference{1,1,numTrack};
+            if ~isempty(indexFrame)&& ~isempty (allDifferences.BirthDeath{numActor,method,numTrack})
+                startIdx=indexFrame(1)-allDifferences.BirthDeath{numActor,method,numTrack}(1)+1;
+                endIdx=indexFrame(2)-allDifferences.BirthDeath{numActor,method,numTrack}(1)+1;
+                if startIdx>numel(tracksDifference) || endIdx<1
+                    tracksDifference=[];
+                else
+                     if startIdx<1
+                        startIdx=1;
+                     end
+                     if endIdx>numel(tracksDifference)
+                         endIdx=numel(tracksDifference);
+                     end
+                     tracksDifference=tracksDifference(startIdx:endIdx);
+                end
+            end
+%             differenceList{type,1}=[differenceList{type,1}; thisDifference{1,1,numTrack}];
+            differenceList{type,1}=[differenceList{type,1}; tracksDifference];
+%             nameList{type,1}=[nameList{type,1}; repmat(allLabels(method),size(thisDifference{1,1,numTrack},1),1)];
+            nameList{type,1}=[nameList{type,1}; repmat(allLabels(method),size(tracksDifference,1),1)];
+            
+            theseDifferences=[theseDifferences; tracksDifference];
+        end
+        thisErrors=theseDifferences;
         allErrors(type,method)=sqrt(mean(thisErrors.^2));
         statisticAnalysis(type,method)=datastats(thisErrors);
-        for numTrack=1:size(thisDifference,3)
-            differenceList{type,1}=[differenceList{type,1}; thisDifference{1,1,numTrack}];
-            nameList{type,1}=[nameList{type,1}; repmat(allLabels(method),size(thisDifference{1,1,numTrack},1),1)];
-        end
     end
 end
 
