@@ -1,6 +1,6 @@
 function collections=getComplex1(speed)
 
-distance=10;
+distance=20;
 %% egoVehicle
 for x=1
 collections(1,1).classID=1;
@@ -83,8 +83,8 @@ end
 %% Vehicle from front 2
 for x=1
 collections(1,6).classID=1;
-collections(1,6).roadPoints=[250+1.5*distance,5,0;0,5,0];
-collections(1,6).waypoints=[250+1.5*distance,5,0;0,5,0];
+collections(1,6).roadPoints=[250+3*distance,5,0;0,5,0];
+collections(1,6).waypoints=[250+3*distance,5,0;0,5,0];
 collections(1,6).speeds=[speed(1);speed(1)];
 end
 

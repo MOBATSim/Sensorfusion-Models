@@ -12,10 +12,10 @@ addpath("Evaluation")
 % 
 % First of all the parameters for the scenario have to be chosen.
 
-speed=[50/3.6 50/3.6];
+speed=[40/3.6 40/3.6];
 distance=30;
-deceleration=-9;
-radius=50;
+deceleration=-6;
+radius=35;
 %% 
 % The scenario that should get evaluated has to be uncommented.
 % 
@@ -47,7 +47,7 @@ radius=50;
 % 
 % ->> straight to right from speed(1) to speed(2)
 
-% collections=getElements_IMMFollow(speed,distance)
+% collections=getElements_IMMFollow(speed,distance,radius,deceleration)
 %% 
 % *Get the elements of "Straight (follow)":* 
 % 
@@ -57,7 +57,7 @@ radius=50;
 % 
 % Target: straight with speed(2)
 
-collections=getElements_StraightFollow(speed,distance)
+% collections=getElements_StraightFollow(speed,distance)
 %% 
 % *Get the elements of "Straight with deceleration":* 
 % 
@@ -118,7 +118,7 @@ collections=getElements_StraightFollow(speed,distance)
 % 
 % 
 
-% collections=getElements_Complex1(speed)
+collections=getElements_Complex1(speed)
 %% Generating detections and scenario data 
 % Creation of a drivingScenario object and detection generation with selected 
 % sensor-setup.
@@ -139,13 +139,13 @@ sensorConfigNr=2;
 %% 
 % The described elements are collected in the respective arrays for roads/vehicles.
 % 
-% Link to <internal:H_0BBD4113 transferElements>.
+% Link to <internal:H_2DF6E5A3 transferElements>.
 
 [allRoads,allVehicles,collections]=transferElements(collections);
 %% 
 % A driving scenario object is build with the elements of the scenario.
 % 
-% Link to <internal:H_B23D2753 getScenario>.
+% Link to <internal:H_B78A8512 getScenario>.
 
 [scenario,egoVehicle]=getScenario(allRoads,allVehicles,sensorSampleTime);
 %% 
@@ -160,14 +160,14 @@ sensorConfigNr=2;
 % 
 % 
 % 
-% Link to <internal:H_E96E72EB getSensors>.
+% Link to <internal:H_EC1DC4ED getSensors>.
 
 [sensors,numSensors]=getSensors(scenario,sensorSampleTime,sensorConfigNr);
 %% 
 % Advancing and extracting detections for every time step of the scenario, till 
 % the first vehicle stands still.
 % 
-% Link to <internal:H_6B37CA6D getSensorData>.
+% Link to <internal:H_838D55C4 getSensorData>.
 
 [allData,sensors,scenario]=getSensorData(scenario,egoVehicle,sensors);
 %% 
@@ -181,10 +181,10 @@ sensorConfigNr=2;
 % it also means a loss of information and and more noise. Additionally near vehicles 
 % could result in a single detection, when clustering not perfectly.
 % 
-% Link to <internal:H_2FFEC92C prefilterDetections>.
+% Link to <internal:H_4CB95A78 prefilterDetections>.
 
 clusterIdeal=0;
-idealHasNoise=1;
+idealHasNoise=0;
 [allDetections,allClusterSizes]=prefilterDetections(allData,sensors,clusterIdeal,idealHasNoise);
 %% Evaluate scenario (tracking algorithms)
 % This part is the main algorithm. Since there are multiple methods possible, 
@@ -207,11 +207,11 @@ idealHasNoise=1;
 % 
 % IMM --> Interacting multiple model filter
 
-numMethods=2%:4;
+numMethods=2;%:4;
 %% 
 % The scenario is then evaluated with every method (defined before with numMethods).
 % 
-% Link to <internal:H_FE07DBD8 processData>.
+% Link to <internal:H_3AFB5669 processData>.
 
 [result,allbestActors,confirmedTracks]=processData(allData,allDetections,allClusterSizes,scenario,sensors,numMethods,sensorSampleTime);
 %% Visualize results
@@ -268,11 +268,20 @@ visualizeMap(result,numMethods,numActors)
 
 allDifferences=visualizeDifference(result,numMethods,allbestActors,numActors,sensorSampleTime,confirmedTracks);
 %% 
-% Plotting the Boxplots of range, velocity magnitude, and velocity direction 
-% and calculating means,RMSE and standard deviation.
+% Plotting the Boxplots of range magnitude, range direction, velocity magnitude, 
+% and velocity direction and calculating means,RMSE and standard deviation.
+% 
+% Boxplots show the median of the error values, the respective quartils and 
+% the number of outliners. It gives a overview over the position and parameters 
+% of the error distribution's values.
+% 
+% Optional an timeframe can be set up, to only analyse the values between [$t_{min}$ 
+% $t_{max}$]. (If left empty the whole scenario is analysed).
 
-numActor=5;
-[thisRMSE,thisMeans,thisStd]=visualizeBoxPlots(allDifferences,numActor);
+numActor=2;
+timeFrame=[]; % in seconds
+indexFrame=fix((round(timeFrame,1)*sensorSampleTime/0.01));
+[thisRMSE,thisMeans,thisStd]=visualizeBoxPlots(allDifferences,numActor,indexFrame);
 %% 
 % This function visualizes the model probabilities of the IMM filter models 
 % for:
@@ -283,7 +292,7 @@ numActor=5;
 % If no specific actorNr is defined, it visualizes the probabilities of the 
 % last track.
 
-actorNr=2;
+actorNr=6;
 visualizeIMMprobs(confirmedTracks,numMethods,actorNr,allbestActors)
 %% 
 % *Evaluating multiple simulation runs*
@@ -334,7 +343,7 @@ numMethods2Show=1:4;
 %% 
 % On which actor should the camera be positioned on.
 
-cameraOnActorNr=2;
+cameraOnActorNr=1;
 %% 
 % Animate the scenario and the emasurement.
 
@@ -1835,15 +1844,13 @@ end
 % So the algorithm mainly uses the track creation process of the GNN algorithm, 
 % but since more than one sensor is used, track creation is limited to detection 
 % (-clusters) with at least 2 fused detections to lower the possibility of clutter 
-% measurements creating a track. (maybe extendable with the creation, if camera 
-% finds object id)
+% measurements creating a track.
 
 for numDetection=1:size(allDetections)
 %% 
 % Every detection that was not assigned to a track, can create a new track,IF
 
-    if(~max(numDetection==deleteList))
-        
+    if(~max(numDetection==deleteList))       
 %% 
 % ... the number of detections in the respective detection pool is higher than 
 % 1
@@ -2002,15 +2009,15 @@ for numTrack=1:size(tracks,1)
 % The process noise is modeled as *additive noise* in this model. Since the vehicles 
 % in the simulation do not only perform constant velocity segements, but also 
 % maneuvers like turning and accelerating/decelerating, the velocity related process 
-% noise of the cvKF has to be quite high. The values $\sigma_{velocity} ^2=5 {m^2 
-% \over s^2}$ and $\sigma_{location} ^2=0.1 {m^2}$ are chosen for a good performance 
-% when turning and decelerating for a sensor sample time $T_S=0.1 s$. Because 
-% a higher sample time $T_S$ could lead to a higher uncertainty in the velocity 
-% of the model, the process noise is adjusted to the sample time $T_S$ of the 
-% sensor configuration. 
+% noise of the cvKF has to be quite high. The values $\sigma_{velocity} ^2=2.5 
+% {m^2 \over s^2}$ and $\sigma_{location} ^2=0.1 {m^2}$ are chosen for a good 
+% performance when turning and decelerating for a sensor sample time $T_S=0.1 
+% s$. Because a higher sample time $T_S$ could lead to a higher uncertainty in 
+% the velocity of the model, the process noise is adjusted to the sample time 
+% $T_S$ of the sensor configuration. 
 % 
-% *process noise* matrix: $Q_{cvKF}=\pmatrix{T_S & 0 & 0 & 0 \cr0 & 50T_S & 
-% 0 & 0 \cr0 & 0 & TS &0 \cr0 & 0 & 0 & 50T_S}$
+% *process noise* matrix: $Q_{cvKF}=\pmatrix{T_S & 0 & 0 & 0 \cr0 & 25T_S & 
+% 0 & 0 \cr0 & 0 & TS &0 \cr0 & 0 & 0 & 25T_S}$
 
                     processNoise=[1*Ts,0,0,0;0,25*Ts,0,0;0,0,1*Ts,0;0,0,0,25*Ts];
 %% 
@@ -2342,9 +2349,9 @@ for numTrack=1:size(tracks,1)
 % It represents the uncertaincy in terms of the jerks. This specific model has 
 % to track the target, also when it is quickly starting to accelerate and more 
 % importantly, when it quickly decelerates (e.g for an emergency break). Therefore 
-% the process noise of the jerk is set to $\sigma_{jerk}^2= 3 {{m^2\over s^6}$
+% the process noise of the jerk is set to $\sigma_{jerk}^2= 0.1 {{m^2\over s^6}$
 % 
-% *process noise* matrix $Q_{IMM2}=\pmatrix{3 & 0 & \cr 0 & 3}$
+% *process noise* matrix $Q_{IMM2}=\pmatrix{0.1 & 0 & \cr 0 & 0.1}$
 
                                 dJerk=0.1;
                                 processNoise=diag([dJerk dJerk]);
@@ -2438,11 +2445,12 @@ for numTrack=1:size(tracks,1)
 % 
 % To differentiate this model from the constant acceleration model (IMM2), the 
 % process noise of the acceleration is set quite low, to prevent the filter from 
-% adjusting to an acceleration to fast. $\sigma_{acceleration}^2= 0.01 {{m^2}\over 
+% adjusting to an acceleration to fast. $\sigma_{acceleration}^2= 1 {{m^2}\over 
 % s^4}$
 % 
-% On the contrary it should quickly adjust to the turnrate of the target. $\sigma_{turnrate}^2= 
-% 10( {{°}\over s^2})^2$
+% On the contrary it should quickly adjust to the turnrate of the target and 
+% be able to also suit not perfectly round curves. $\sigma_{turnrate}^2= 1( {{°}\over 
+% s^2})^2$
 % 
 % *process noise* matrix $Q_{IMM3}=\pmatrix{1 & 0 & 0\cr0 &1 & 0\cr 0 & 0 & 
 % 10}$
@@ -2498,7 +2506,7 @@ for numTrack=1:size(tracks,1)
 % 
 % The probibility that a model does not transition in one second is set to:
 % 
-% $$p_{ii}(T_S=1s)=0.8$$
+% $$p_{ii}(T_S=1s)=0.7$$
 % 
 % The other probabilities are set to:
 % 
@@ -2506,7 +2514,7 @@ for numTrack=1:size(tracks,1)
 % 
 % The diagonal values are calculated for the respective sample time $T_S$.
 % 
-% $$p_{ii}(T_S)=0.8^{T_S}$$
+% $$p_{ii}(T_S)=0.7^{T_S}$$
 
                     diagonalProbs=0.70^Ts;
                     rest=1-diagonalProbs;

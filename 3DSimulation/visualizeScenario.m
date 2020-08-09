@@ -1,15 +1,19 @@
-function visualizeScenario(numMethods,result,numActors,numMethods2Show,cameraOnActorNr)
+function visualizeScenario(numMethods,result,numActors,numMethods2Show,cameraOnActorNr,withActors)
 cd('3DSimulation')
 % open_system('cleanModel')
 load_system('cleanModel')
 save_system('cleanModel', 'recentModel')
+
+% withActors=1;
 %% add Vehicles
 for i=1
     add_block('lib/Vehicle','recentModel/ego');
 end
 
-for i=2:numActors+1
-    add_block('lib/Vehicle',['recentModel/actor' num2str(i)]);
+if withActors
+    for i=2:numActors+1
+        add_block('lib/Vehicle',['recentModel/actor' num2str(i)]);
+    end
 end
 
 for method=numMethods
@@ -42,19 +46,21 @@ for i=1
 end
 
 % actors
-for i=2:numActors+1    
-    actors(i).x=result{numMethods(1),1}{:,(i-1)*4+1};
-    actors(i).y=result{numMethods(1),1}{:,(i-1)*4+2};
-    actors(i).dir=rad2deg(result{numMethods(1),1}{:,(i-1)*4+4});
-    set_param(['recentModel/actor' num2str(i) '/X'],'Table',['actors(' num2str(i) ').x']);
-    set_param(['recentModel/actor' num2str(i) '/Y'],'Table',['actors(' num2str(i) ').y']);
-    set_param(['recentModel/actor' num2str(i) '/Dir'],'Table',['actors(' num2str(i) ').dir']);
-    thisPosition=[-390 -175 -350 -115]+(i-2)*[0 135 0 135];
-    set_param(['recentModel/actor' num2str(i)],'Position',['[' num2str(thisPosition) ']']);
-    set_param(['recentModel/actor' num2str(i) '/Vehicle'],'ActorName',['Actor' num2str(i)]);
-    set_param(['recentModel/actor' num2str(i) '/Vehicle'],'VehColor','Green');
-    
-    add_line('recentModel','Floor/1',['actor' num2str(i) '/1'])
+if withActors
+    for i=2:numActors+1
+        actors(i).x=result{numMethods(1),1}{:,(i-1)*4+1};
+        actors(i).y=result{numMethods(1),1}{:,(i-1)*4+2};
+        actors(i).dir=rad2deg(result{numMethods(1),1}{:,(i-1)*4+4});
+        set_param(['recentModel/actor' num2str(i) '/X'],'Table',['actors(' num2str(i) ').x']);
+        set_param(['recentModel/actor' num2str(i) '/Y'],'Table',['actors(' num2str(i) ').y']);
+        set_param(['recentModel/actor' num2str(i) '/Dir'],'Table',['actors(' num2str(i) ').dir']);
+        thisPosition=[-390 -175 -350 -115]+(i-2)*[0 135 0 135];
+        set_param(['recentModel/actor' num2str(i)],'Position',['[' num2str(thisPosition) ']']);
+        set_param(['recentModel/actor' num2str(i) '/Vehicle'],'ActorName',['Actor' num2str(i)]);
+        set_param(['recentModel/actor' num2str(i) '/Vehicle'],'VehColor','Green');
+        
+        add_line('recentModel','Floor/1',['actor' num2str(i) '/1'])
+    end
 end
 
 % tracks
@@ -119,11 +125,14 @@ end
 
 
 assignin('base','ego',ego);
-assignin('base','actors',actors);
 assignin('base','tracks',tracks);
 
+if withActors
+    assignin('base','actors',actors);
+end
+
 %% Slow down simulation by changing the gain-block's gain
-slowDown=8;
+slowDown=4;
 dtOfTable=slowDown*seconds(result{numMethods(1),1}.Time(2)-result{numMethods(1),1}.Time(1));
 set_param('recentModel/Gain','Gain',['1/' num2str(dtOfTable)])
 
